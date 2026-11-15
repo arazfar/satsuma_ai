@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Button, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { convex } from "../lib/convex";
-import { authStorage } from "../lib/authStorage";
+import { authStorage, subscribeAuthStorageErrors } from "../lib/authStorage";
 
 function SessionGate() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -23,5 +23,8 @@ function SessionGate() {
 }
 
 export default function RootLayout() {
-  return <SafeAreaProvider><ConvexAuthProvider client={convex} storage={authStorage}><SessionGate /></ConvexAuthProvider></SafeAreaProvider>;
+  const [storageError, setStorageError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => subscribeAuthStorageErrors(setStorageError), []);
+  return <SafeAreaProvider>{storageError ? <View style={{ flex: 1, justifyContent: "center", padding: 32, backgroundColor: "#FFF7EC", gap: 16 }}><Text accessibilityRole="alert">Your secure session couldn’t be opened. Satsuma won’t replace your identity or discard your topics.</Text><Text>{storageError}</Text><Button title="Retry secure storage" onPress={() => { setStorageError(""); setAttempt(value => value + 1); }} /></View> : <ConvexAuthProvider key={attempt} client={convex} storage={authStorage} shouldHandleCode={false}><SessionGate /></ConvexAuthProvider>}</SafeAreaProvider>;
 }

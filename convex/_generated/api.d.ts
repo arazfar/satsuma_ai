@@ -9,7 +9,12 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as feed from "../feed.js";
+import type * as friendships from "../friendships.js";
 import type * as http from "../http.js";
+import type * as model from "../model.js";
+import type * as profiles from "../profiles.js";
+import type * as sample from "../sample.js";
 import type * as topics from "../topics.js";
 
 import type {
@@ -20,7 +25,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  feed: typeof feed;
+  friendships: typeof friendships;
   http: typeof http;
+  model: typeof model;
+  profiles: typeof profiles;
+  sample: typeof sample;
   topics: typeof topics;
 }>;
 
