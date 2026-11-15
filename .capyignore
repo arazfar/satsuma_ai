@@ -1,0 +1,7 @@
+.env*
+.auth-keys.json
+.convex
+.agents
+.claude
+renders
+node_modules

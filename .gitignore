@@ -1,3 +1,8 @@
 node_modules/
 .env*
 .convex/
+.auth-keys.json
+.expo/
+ios/
+android/
+dist/
