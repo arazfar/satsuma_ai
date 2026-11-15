@@ -13,3 +13,5 @@
 !modules/**
 !scripts/
 !scripts/**
+!fixtures/
+!fixtures/**
