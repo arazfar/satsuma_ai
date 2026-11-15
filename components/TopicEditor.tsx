@@ -5,24 +5,27 @@ import { Alert, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import { socialApi, Topic } from "../lib/socialApi";
 import { WeeklyWindow } from "../lib/weeklyImport";
-import { Action, Body, Check, ErrorNote, Field, Heading, Label } from "./paper";
+import { Action, Body, Check, ErrorNote, Field, Heading } from "./paper";
 
 export function TopicEditor({
   topic,
   window,
   onSaved,
   onBusy,
+  scope: initialScope,
 }: {
   topic?: Topic;
   window: WeeklyWindow;
   onSaved: () => void;
   onBusy: (busy: boolean) => void;
+  scope: string | null;
 }) {
   const add = useMutation(api.topics.add);
   const update = useMutation(socialApi.topics.update);
   const remove = useMutation(socialApi.topics.remove);
   const key = useRef(`manual:${Crypto.randomUUID()}`);
   const [title, setTitle] = useState(topic?.title ?? "");
+  const [scope] = useState(initialScope);
   const [summary, setSummary] = useState(topic?.summary ?? "");
   const [tags, setTags] = useState(topic?.tags.join(", ") ?? "");
   const [shared, setShared] = useState(topic?.audience === "friends");
@@ -60,6 +63,7 @@ export function TopicEditor({
       else
         await add({
           ...fields,
+          scope,
           source: "manual",
           date: window.end,
           weekStart: window.start,
@@ -103,8 +107,7 @@ export function TopicEditor({
 
   return (
     <View style={{ gap: 22 }}>
-      <Label>{topic ? "Your topic" : "A little thing worth sharing"}</Label>
-      <Heading>{topic ? "Make it yours." : "What are you into?"}</Heading>
+      <Heading>{topic ? "Edit topic." : "What are you into?"}</Heading>
       <Body>
         {topic
           ? "Changes update your friends’ view immediately."
@@ -119,7 +122,7 @@ export function TopicEditor({
         placeholder="A small thing on your mind"
       />
       <Field
-        label="Your first-person summary"
+        label="Your sentence"
         value={summary}
         onChangeText={setSummary}
         multiline

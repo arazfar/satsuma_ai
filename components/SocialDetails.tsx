@@ -38,7 +38,11 @@ export function OverlapDetails({
   me: Profile;
   onProfile: (profile: Profile) => void;
 }) {
-  const [opener, setOpener] = useState("Want to try a class together?");
+  const [opener, setOpener] = useState(() =>
+    match?.sharedTags.includes("pottery")
+      ? "Want to try a class together?"
+      : `I saw you’re into ${match?.sharedTags[0] ?? "this"} too. Want to compare notes?`,
+  );
   const [error, setError] = useState("");
   if (!match)
     return (
@@ -67,9 +71,7 @@ export function OverlapDetails({
   }
   return (
     <View style={{ gap: 18 }}>
-      <Label>
-        A reason to reach out{friend.synthetic ? " · fictional circle" : ""}
-      </Label>
+      {friend.synthetic ? <Label>Fictional sample circle</Label> : null}
       <Text
         accessibilityRole="header"
         style={{
@@ -80,7 +82,7 @@ export function OverlapDetails({
           letterSpacing: -0.8,
         }}
       >
-        You and {friend.name}, connected by {match.sharedTags.join(" + ")}.
+        {match.sharedTags.join(" + ")} with {friend.name}.
       </Text>
       <Paper color={colors.apricot} style={{ padding: 18, gap: 10 }}>
         <View style={s.row}>
@@ -125,7 +127,7 @@ export function OverlapDetails({
         <Tags tags={theirs.tags} />
       </Paper>
       <Field
-        label="Your editable conversation opener"
+        label="Your message"
         multiline
         value={opener}
         onChangeText={setOpener}
@@ -137,11 +139,9 @@ export function OverlapDetails({
         onPress={() => void share()}
         testID="share-conversation"
       >
-        Send a little hello ↗
+        Share message ↗
       </Action>
-      <Body muted>
-        Opens the iOS share sheet. You choose who gets the message.
-      </Body>
+      <Body muted>You choose who gets the message in the share sheet.</Body>
       <ErrorNote text={error} />
     </View>
   );
@@ -298,8 +298,11 @@ export function TopicTile({
     <ActionTile label={`Open topic: ${topic.title}`} onPress={onPress}>
       <Paper color={color} ticket>
         <Text style={s.title}>{topic.title}</Text>
+        <Body>{topic.summary}</Body>
         <Tags tags={topic.tags} />
-        <Label>{topic.audience === "private" ? "Only you" : "Shared"}</Label>
+        <Label>
+          {topic.audience === "private" ? "Only you" : "Shared with friends"}
+        </Label>
       </Paper>
     </ActionTile>
   );

@@ -7,6 +7,7 @@ type ReadCtx = Pick<QueryCtx, "db" | "auth" | "storage">;
 export const profileValidator = v.object({
   userId: v.id("users"), name: v.string(), photoUrl: v.union(v.string(), v.null()),
   sharingPaused: v.boolean(), synthetic: v.boolean(), sampleActive: v.boolean(),
+  scope: v.union(v.string(), v.null()),
 });
 export const windowFields = { weekStart: v.string(), weekEnd: v.string() };
 
@@ -61,12 +62,20 @@ export async function profileView(ctx: ReadCtx, userId: Id<"users">, scope?: Id<
   return {
     userId, name: profile?.name ?? "You", photoUrl: profile?.photoId ? await ctx.storage.getUrl(profile.photoId) : null,
     sharingPaused: scope === userId ? profile?.sampleSharingPaused ?? false : profile?.sharingPaused ?? false, synthetic: !!profile?.sampleOwner, sampleActive: profile?.sampleActive ?? false,
+    scope: profile?.sampleActive ? profile.sampleRunId ?? null : null,
   };
 }
 
 export async function scopeFor(ctx: Pick<QueryCtx, "db">, userId: Id<"users">) {
   const profile = await storedProfile(ctx, userId);
   return profile?.sampleActive ? userId : undefined;
+}
+
+export async function requireWriteScope(ctx: Pick<QueryCtx, "db">, owner: Id<"users">, expected: string | null | undefined) {
+  const profile = await storedProfile(ctx, owner);
+  const current = profile?.sampleActive ? profile.sampleRunId : null;
+  if (expected === undefined || current === undefined || current !== expected) throw new Error("Your circle changed. Reopen this screen before saving; your draft has not been shared.");
+  return profile?.sampleActive ? owner : undefined;
 }
 
 export async function edgesFor(ctx: Pick<QueryCtx, "db">, userId: Id<"users">, scope: Id<"users"> | undefined) {
@@ -98,13 +107,13 @@ export async function insertTopic(ctx: MutationCtx, owner: Id<"users">, args: Om
   validateTopic(args);
   const importKey = await retryKey(ctx, owner, args.importKey, args.sampleOwner);
   const retry = await ctx.db.query("topicImports").withIndex("by_owner_and_importKey", q => q.eq("owner", owner).eq("importKey", importKey)).unique();
-  if (retry) return retry.topicId;
+  if (retry) return {id: retry.topicId, status: await ctx.db.get("topics", retry.topicId) ? "unchanged" as const : "deleted" as const};
   const existing = await ctx.db.query("topics").withIndex("by_owner_and_sampleOwner_and_importKey", q => q.eq("owner", owner).eq("sampleOwner", args.sampleOwner).eq("importKey", args.importKey)).unique();
-  if (existing) return existing._id;
+  if (existing) return {id: existing._id, status: "unchanged" as const};
   if ((await topicsFor(ctx, owner, args.sampleOwner)).length >= 100) throw new Error("Keep up to 100 topics; remove an older topic first.");
   const id = await ctx.db.insert("topics", {...args, owner, title: args.title.trim(), summary: args.summary.trim(), tags: [...new Set(args.tags.map(t => t.trim()))], updatedAt: Date.now()});
   await ctx.db.insert("topicImports", {owner, importKey, topicId: id});
-  return id;
+  return {id, status: "created" as const};
 }
 
 export async function retryKey(ctx: Pick<QueryCtx, "db">, owner: Id<"users">, key: string, scope?: Id<"users">) {

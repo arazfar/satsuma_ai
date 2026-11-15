@@ -25,6 +25,7 @@ export function ProfileEditor({
   const update = useMutation(socialApi.profiles.update);
   const setPhoto = useAction(socialApi.profiles.setPhoto);
   const [name, setName] = useState(profile.name);
+  const [scope] = useState(profile.scope);
   const [paused, setPaused] = useState(profile.sharingPaused);
   const [photo, setPickedPhoto] = useState<{
     uri: string;
@@ -89,6 +90,7 @@ export function ProfileEditor({
       await update({
         name: name.trim(),
         sharingPaused: paused,
+        scope,
         ...(removePhoto ? { photoId: null } : {}),
       });
       if (photo)
@@ -107,7 +109,7 @@ export function ProfileEditor({
 
   return (
     <View style={{ gap: 22 }}>
-      <Heading>A face, a name, you.</Heading>
+      <Heading>Your profile.</Heading>
       <View style={{ alignItems: "center" }}>
         <Portrait
           name={name}

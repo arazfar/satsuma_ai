@@ -10,6 +10,13 @@ export const start = mutation({
     const profile = await ensureProfile(ctx, viewer);
     const previous = await ctx.db.query("profiles").withIndex("by_sampleOwner", q => q.eq("sampleOwner", viewer)).take(3);
     if (!args.reset && previous.length) {
+      for (const owner of [viewer, ...previous.map(p => p.userId)]) {
+        for (const topic of await topicsFor(ctx, owner, viewer)) {
+          if (topic.source === "sample" && (topic.weekStart !== args.weekStart || topic.weekEnd !== args.weekEnd)) {
+            await ctx.db.patch("topics", topic._id, {weekStart: args.weekStart, weekEnd: args.weekEnd, updatedAt: Date.now()});
+          }
+        }
+      }
       await ctx.db.patch("profiles", profile._id, {sampleActive: true});
       return {mayaId: previous[0].userId};
     }

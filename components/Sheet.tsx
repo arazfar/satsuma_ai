@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ComponentRef, ReactNode, Ref } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -14,11 +14,13 @@ export function Sheet({
   onClose,
   title = "Back",
   busy = false,
+  scrollRef,
 }: {
   children: ReactNode;
   onClose: () => void;
   title?: string;
   busy?: boolean;
+  scrollRef?: Ref<ComponentRef<typeof ScrollView>>;
 }) {
   return (
     <Modal
@@ -34,20 +36,34 @@ export function Sheet({
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ padding: 24, paddingBottom: 44, gap: 24 }}
+          <View
+            style={{
+              alignSelf: "flex-start",
+              paddingHorizontal: 24,
+              paddingTop: 8,
+              paddingBottom: 12,
+            }}
           >
-            <View style={{ alignSelf: "flex-start" }}>
-              <Action
-                secondary
-                onPress={onClose}
-                disabled={busy}
-                label="Close this screen"
-              >
-                ← {title}
-              </Action>
-            </View>
+            <Action
+              secondary
+              onPress={onClose}
+              disabled={busy}
+              label="Close this screen"
+            >
+              ← {title}
+            </Action>
+          </View>
+          <ScrollView
+            ref={scrollRef}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            contentContainerStyle={{
+              padding: 24,
+              paddingTop: 8,
+              paddingBottom: 44,
+              gap: 24,
+            }}
+          >
             {children}
           </ScrollView>
         </KeyboardAvoidingView>

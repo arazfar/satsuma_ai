@@ -9,6 +9,7 @@ export type Profile = {
   sharingPaused: boolean;
   synthetic: boolean;
   sampleActive: boolean;
+  scope: string | null;
 };
 export type Topic = Doc<"topics">;
 export type FriendshipId = GenericId<"friendships">;
@@ -46,7 +47,7 @@ export const socialApi = {
     >("profiles:get"),
     update: makeFunctionReference<
       "mutation",
-      { name?: string; sharingPaused?: boolean; photoId?: null },
+      { name?: string; sharingPaused?: boolean; photoId?: null; scope?: string | null },
       null
     >("profiles:update"),
     setPhoto: makeFunctionReference<
