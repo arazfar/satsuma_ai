@@ -1,56 +1,65 @@
+# Revyl Test Definition
+
+_meta:
+    remote_id: 8868df52-30a7-4af8-b180-792d090208d6
+    remote_version: 1
+    local_version: 1
+    last_synced_at: "2026-11-15T22:25:54Z"
+    checksum: 65a5782fd2ffebe18fd6cec8e97f659e3892918a64a50bd1078dc6fda9bc2fa7
 test:
-  metadata:
-    name: add-weekly-topic
-    platform: ios
-    tags:
-      - smoke
-      - persistence
-  build:
-    name: satsuma-ai
-  blocks:
-    - type: if
-      condition: Is Try a sample circle visible?
-      then:
+    metadata:
+        name: add-weekly-topic
+        platform: ios
+        tags:
+            - smoke
+            - persistence
+    build:
+        name: capy--org_01M7G3Z5DPHEYN36H5EJ5BS608--satsuma-ai-ios
+    blocks:
+        - type: if
+          condition: Is Try a sample circle visible?
+          then:
+            - type: instructions
+              step_description: Tap Try a sample circle to enter the explicitly fictional circle.
         - type: instructions
-          step_description: Tap Try a sample circle to enter the explicitly fictional circle.
-    - type: instructions
-      step_description: Tap Reset sample circle to start a FRESH isolated fictional circle for this run. Never reuse a prior sample circle containing viewer topics.
-    - type: instructions
-      step_description: In the confirmation alert, tap Reset sample circle.
-    - type: validation
-      step_description: This is a fictional sample circle. Maya has Saturday ceramics, and the viewer has no pottery topic or pottery overlap yet.
-    - type: instructions
-      step_description: Open the You tab.
-    - type: instructions
-      step_description: Open the import topics flow.
-    - type: instructions
-      step_description: Choose ChatGPT.
-    - type: instructions
-      step_description: |
-        Type exactly this into the real import text box, without correcting its bare date key:
-        {"topics":[{"title":"Wheel-thrown mugs","summary":"I want to make my own coffee mug on the wheel.","tags":["wheel throwing"],"date"}]}
-    - type: instructions
-      step_description: Parse or review the pasted topics.
-    - type: validation
-      step_description: Wheel-thrown mugs requires explicit confirmation of its week because its date is unknown. Nothing is selected to share automatically.
-    - type: instructions
-      step_description: Confirm that Wheel-thrown mugs belongs to this displayed week.
-    - type: instructions
-      step_description: Select only Wheel-thrown mugs to share.
-    - type: validation
-      step_description: The exact friend preview shows Wheel-thrown mugs, I want to make my own coffee mug on the wheel., and wheel throwing. The explicit share button says Share 1 with friends.
-    - type: instructions
-      step_description: Tap Share 1 with friends.
-    - type: manual
-      step_type: kill_app
-    - type: manual
-      step_type: open_app
-      step_description: ai.satsuma.circle
-    - type: instructions
-      step_description: Open the You tab.
-    - type: validation
-      step_description: Wheel-thrown mugs appears exactly once in the viewer's saved Convex topics after a cold relaunch, with no Metro connection or development-server screen.
-    - type: instructions
-      step_description: Open Friends and tap the pottery overlap with Maya.
-    - type: validation
-      step_description: Both owners and both titles are legible on the overlap detail: the viewer's Wheel-thrown mugs and Maya's Saturday ceramics. The shared word is pottery and the editable opener offers Want to try a class together?
+          step_description: Tap Reset sample circle to start a FRESH isolated fictional circle for this run. Never reuse a prior sample circle containing viewer topics.
+        - type: instructions
+          step_description: In the confirmation alert, tap Reset sample circle.
+        - type: validation
+          step_description: This is a fictional sample circle. Maya has Saturday ceramics, and the viewer has no pottery topic or pottery overlap yet.
+        - type: instructions
+          step_description: Open the You tab.
+        - type: instructions
+          step_description: Open the import topics flow.
+        - type: instructions
+          step_description: Choose ChatGPT.
+        - type: instructions
+          step_description: |
+            Type exactly this into the real import text box, without correcting its bare date key:
+            {"topics":[{"title":"Wheel-thrown mugs","summary":"I want to make my own coffee mug on the wheel.","tags":["wheel throwing"],"date"}]}
+        - type: instructions
+          step_description: Parse or review the pasted topics.
+        - type: validation
+          step_description: Wheel-thrown mugs requires explicit confirmation of its week because its date is unknown. Nothing is selected to share automatically.
+        - type: instructions
+          step_description: Confirm that Wheel-thrown mugs belongs to this displayed week.
+        - type: instructions
+          step_description: Select only Wheel-thrown mugs to share.
+        - type: validation
+          step_description: The exact friend preview shows Wheel-thrown mugs, I want to make my own coffee mug on the wheel., and wheel throwing. The explicit share button says Share 1 with friends.
+        - type: instructions
+          step_description: Tap Share 1 with friends.
+        - type: manual
+          step_type: kill_app
+        - type: manual
+          step_type: open_app
+          step_description: ai.satsuma.circle
+        - type: instructions
+          step_description: Open the You tab.
+        - type: validation
+          step_description: Wheel-thrown mugs appears exactly once in the viewer's saved Convex topics after a cold relaunch, with no Metro connection or development-server screen.
+        - type: instructions
+          step_description: Open Friends and tap the pottery overlap with Maya.
+        - type: validation
+          step_description: |
+            Both owners and both titles are legible on the overlap detail: the viewer's Wheel-thrown mugs and Maya's Saturday ceramics. The shared word is pottery and the editable opener offers Want to try a class together?
