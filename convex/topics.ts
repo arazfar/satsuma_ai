@@ -1,30 +1,61 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import schema, { topicFields } from "./schema";
+import { canReadTopic, insertTopic, requireUser, retryKey, scopeFor, topicsFor, validateTopic } from "./model";
 
 export const listMine = query({
-  args: {},
-  returns: v.array(schema.doc("topics")),
-  handler: async (ctx) => {
-    const owner = await getAuthUserId(ctx);
-    if (!owner) throw new Error("Sign in to see your topics.");
-    return await ctx.db.query("topics").withIndex("by_owner", q => q.eq("owner", owner)).order("desc").take(100);
+  args: {}, returns: v.array(schema.doc("topics")),
+  handler: async ctx => {
+    const owner = await requireUser(ctx);
+    return await topicsFor(ctx, owner, await scopeFor(ctx, owner));
   },
 });
 
-const { owner: _owner, updatedAt: _updatedAt, ...addFields } = topicFields;
+const {owner: _owner, updatedAt: _updatedAt, sampleOwner: _sampleOwner, ...addFields} = topicFields;
 
 export const add = mutation({
-  args: addFields,
-  returns: v.id("topics"),
+  args: addFields, returns: v.id("topics"),
   handler: async (ctx, args) => {
-    const owner = await getAuthUserId(ctx);
-    if (!owner) throw new Error("Sign in to save a topic.");
-    if (!args.title.trim() || args.title.length > 100 || !args.summary.trim() || args.summary.length > 500 || args.tags.length < 1 || args.tags.length > 3 || args.tags.some(tag => !tag.trim() || tag.length > 40)) throw new Error("Add a short title, sentence, and one to three tags.");
-    if (!args.date && (!args.weekStart || !args.weekEnd)) throw new Error("Confirm the topic's week.");
-    const existing = await ctx.db.query("topics").withIndex("by_owner_and_importKey", q => q.eq("owner", owner).eq("importKey", args.importKey)).unique();
-    if (existing) return existing._id;
-    return await ctx.db.insert("topics", { ...args, title: args.title.trim(), summary: args.summary.trim(), owner, updatedAt: Date.now() });
+    const owner = await requireUser(ctx);
+    const scope = await scopeFor(ctx, owner);
+    return await insertTopic(ctx, owner, {...args, ...(scope ? {sampleOwner: scope} : {})});
+  },
+});
+
+export const get = query({
+  args: {id: v.id("topics")}, returns: v.union(schema.doc("topics"), v.null()),
+  handler: async (ctx, {id}) => {
+    const viewer = await requireUser(ctx);
+    const topic = await ctx.db.get("topics", id);
+    return topic && await canReadTopic(ctx, viewer, topic) ? topic : null;
+  },
+});
+
+export const update = mutation({
+  args: {id: v.id("topics"), title: v.optional(v.string()), summary: v.optional(v.string()), tags: v.optional(v.array(v.string())), date: v.optional(v.union(v.string(), v.null())), weekStart: v.optional(v.string()), weekEnd: v.optional(v.string()), audience: v.optional(topicFields.audience)},
+  returns: v.null(),
+  handler: async (ctx, {id, ...changes}) => {
+    const owner = await requireUser(ctx);
+    const topic = await ctx.db.get("topics", id);
+    if (!topic || topic.owner !== owner || topic.sampleOwner !== await scopeFor(ctx, owner)) throw new Error("Topic not found.");
+    const next = {...topic, ...changes};
+    validateTopic(next);
+    await ctx.db.patch("topics", id, {...changes, ...(changes.title !== undefined ? {title: next.title.trim()} : {}), ...(changes.summary !== undefined ? {summary: next.summary.trim()} : {}), updatedAt: Date.now()});
+    return null;
+  },
+});
+
+export const remove = mutation({
+  args: {id: v.id("topics")}, returns: v.null(),
+  handler: async (ctx, {id}) => {
+    const owner = await requireUser(ctx);
+    const topic = await ctx.db.get("topics", id);
+    if (!topic) return null;
+    if (topic.owner !== owner || topic.sampleOwner !== await scopeFor(ctx, owner)) throw new Error("Topic not found.");
+    const importKey = await retryKey(ctx, owner, topic.importKey, topic.sampleOwner);
+    const retry = await ctx.db.query("topicImports").withIndex("by_owner_and_importKey", q => q.eq("owner", owner).eq("importKey", importKey)).unique();
+    if (!retry) await ctx.db.insert("topicImports", {owner, importKey, topicId: id});
+    await ctx.db.delete("topics", id);
+    return null;
   },
 });
