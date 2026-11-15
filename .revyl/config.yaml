@@ -1,0 +1,15 @@
+project:
+  id: 2dbf3930-3fc6-4463-8ec7-140d0ae880be
+session:
+  idle_timeout_seconds: 1800
+build:
+  framework: expo
+  env:
+    EXPO_PUBLIC_CONVEX_URL: https://content-salmon-941.convex.cloud
+  profiles:
+    preview:
+      ios:
+        app_id: c37a6998-ff50-4304-8081-89e2f1754d13
+        build_commands:
+          - bash scripts/build-ios-simulator.sh
+        output_path: ios/build/Build/Products/Release-iphonesimulator/SatsumaAI.app
