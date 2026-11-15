@@ -2,10 +2,10 @@
 
 _meta:
     remote_id: 8868df52-30a7-4af8-b180-792d090208d6
-    remote_version: 2
-    local_version: 2
-    last_synced_at: "2026-11-15T23:31:02Z"
-    checksum: 52807fe57bd804a7788c3a96dde07a7917eac8c07346af36d29a9541951c0afc
+    remote_version: 3
+    local_version: 3
+    last_synced_at: "2026-11-15T23:54:28Z"
+    checksum: 910e17ba372aac30f317facce98f9f9f0ef5dcf466005fc32909f595227a8f0d
 test:
     metadata:
         name: add-weekly-topic
@@ -48,7 +48,7 @@ test:
         - type: instructions
           step_description: Select only Wheel-thrown mugs to share.
         - type: validation
-          step_description: The exact friend preview shows Wheel-thrown mugs, I want to make my own coffee mug on the wheel., and wheel throwing. The explicit share button says Share 1 with friends.
+          step_description: The editable friend-visible preview fields show exactly Wheel-thrown mugs, I want to make my own coffee mug on the wheel., and wheel throwing. These reviewed fields are exactly what friends will see; a separate duplicate preview card is not required. The explicit share button says Share 1 with friends.
         - type: instructions
           step_description: Tap Share 1 with friends.
         - type: manual
