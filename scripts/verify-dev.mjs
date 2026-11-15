@@ -64,3 +64,14 @@ assert.equal((await recovered.query(ref("profiles:mine"), {})).userId, identity)
 assert.equal((await recovered.query(ref("topics:listMine"), {}))[0]._id, durableId);
 await recovered.mutation(ref("topics:remove"), { id: durableId });
 console.log("PASS installation credential recovers the same owner and topics after session revocation");
+const retryPayload = { ...topic, importKey: "preserve-later-privacy" };
+const retryId = await recovered.mutation(ref("topics:add"), retryPayload);
+await recovered.mutation(ref("topics:update"), { id: retryId, title: "My later edit", audience: "private" });
+assert.equal(await recovered.mutation(ref("topics:add"), retryPayload), retryId);
+const preserved = await recovered.query(ref("topics:get"), { id: retryId });
+assert.equal(preserved.title, "My later edit");
+assert.equal(preserved.audience, "private");
+await recovered.mutation(ref("topics:remove"), { id: retryId });
+assert.equal(await recovered.mutation(ref("topics:add"), retryPayload), retryId);
+assert.equal(await recovered.query(ref("topics:get"), { id: retryId }), null);
+console.log("PASS create-once import retry preserves later edits, unsharing and deletion");

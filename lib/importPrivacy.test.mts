@@ -113,3 +113,13 @@ test("native file size is checked before decoding and raw source is discarded af
     /too large/,
   );
 });
+
+test("import retries only add and cannot overwrite a later edit, unshare or deletion", () => {
+  const source = readFileSync(
+    new URL("../components/WeeklyImport.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /await add\(/);
+  assert.doesNotMatch(source, /topics\.update|await update\(/);
+  assert.match(source, /Repeat imports preserve your later edits, unsharing and deletions/);
+});

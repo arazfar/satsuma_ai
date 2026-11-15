@@ -5,7 +5,6 @@ import { File } from "expo-file-system";
 import { useState } from "react";
 import { Linking, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
-import { socialApi } from "../lib/socialApi";
 import { reviewedTopicFields } from "../lib/reviewedTopic";
 import {
   buildWeeklyPrompt,
@@ -49,7 +48,6 @@ export function WeeklyImport({
   onBusy: (busy: boolean) => void;
 }) {
   const add = useMutation(api.topics.add);
-  const update = useMutation(socialApi.topics.update);
   const [window] = useState(initialWindow);
   const [service, setService] = useState<"chatgpt" | "claude">("chatgpt");
   const [prompt, setPrompt] = useState(() =>
@@ -217,12 +215,11 @@ export function WeeklyImport({
     onBusy(true);
     try {
       for (const topic of ready) {
-        const id = await add({
+        await add({
           ...topic.fields,
           source: service,
           importKey: topic.key,
         });
-        await update({ id, ...topic.fields });
       }
       setInput("");
       setTopics([]);
@@ -431,6 +428,10 @@ export function WeeklyImport({
             This is exactly the title, sentence and tags friends will see.
             Nothing is selected for sharing. Edit freely, keep it private, or
             choose what to share.
+          </Body>
+          <Body muted>
+            Repeat imports preserve your later edits, unsharing and deletions.
+            To change a saved topic, open it in You instead.
           </Body>
           {topics.map((topic, index) => (
             <Paper
