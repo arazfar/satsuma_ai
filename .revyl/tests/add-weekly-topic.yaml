@@ -2,10 +2,10 @@
 
 _meta:
     remote_id: 8868df52-30a7-4af8-b180-792d090208d6
-    remote_version: 1
-    local_version: 1
-    last_synced_at: "2026-11-15T22:25:54Z"
-    checksum: 65a5782fd2ffebe18fd6cec8e97f659e3892918a64a50bd1078dc6fda9bc2fa7
+    remote_version: 2
+    local_version: 2
+    last_synced_at: "2026-11-15T23:31:02Z"
+    checksum: 52807fe57bd804a7788c3a96dde07a7917eac8c07346af36d29a9541951c0afc
 test:
     metadata:
         name: add-weekly-topic
@@ -22,6 +22,8 @@ test:
             - type: instructions
               step_description: Tap Try a sample circle to enter the explicitly fictional circle.
         - type: instructions
+          step_description: Tap the Fictional sample circle Manage control to open sample settings.
+        - type: instructions
           step_description: Tap Reset sample circle to start a FRESH isolated fictional circle for this run. Never reuse a prior sample circle containing viewer topics.
         - type: instructions
           step_description: In the confirmation alert, tap Reset sample circle.
@@ -30,7 +32,7 @@ test:
         - type: instructions
           step_description: Open the You tab.
         - type: instructions
-          step_description: Open the import topics flow.
+          step_description: Tap Import a recap.
         - type: instructions
           step_description: Choose ChatGPT.
         - type: instructions
