@@ -1,17 +1,11 @@
 import { ConvexAuthProvider, useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
 import { Stack } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Button, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { convex } from "../lib/convex";
-
-const storage = {
-  getItem: SecureStore.getItemAsync,
-  setItem: SecureStore.setItemAsync,
-  removeItem: SecureStore.deleteItemAsync,
-};
+import { authStorage } from "../lib/authStorage";
 
 function SessionGate() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -29,5 +23,5 @@ function SessionGate() {
 }
 
 export default function RootLayout() {
-  return <SafeAreaProvider><ConvexAuthProvider client={convex} storage={storage}><SessionGate /></ConvexAuthProvider></SafeAreaProvider>;
+  return <SafeAreaProvider><ConvexAuthProvider client={convex} storage={authStorage}><SessionGate /></ConvexAuthProvider></SafeAreaProvider>;
 }

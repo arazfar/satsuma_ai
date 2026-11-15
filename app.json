@@ -7,7 +7,15 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": { "bundleIdentifier": "ai.satsuma.circle", "supportsTablet": false },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-image-picker", {
+        "photosPermission": "Choose a portrait to show your friends in Satsuma.",
+        "cameraPermission": false,
+        "microphonePermission": false
+      }]
+    ],
     "experiments": { "typedRoutes": true }
   }
 }
