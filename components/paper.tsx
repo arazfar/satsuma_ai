@@ -8,6 +8,7 @@ import {
   TextInputProps,
   View,
   ViewStyle,
+  useWindowDimensions,
 } from "react-native";
 
 export const colors = {
@@ -86,6 +87,7 @@ export function ErrorNote({ text }: { text: string }) {
 }
 
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
+  const { fontScale } = useWindowDimensions();
   return (
     <View style={{ gap: 7 }}>
       <Text style={s.fieldLabel}>{label}</Text>
@@ -95,7 +97,10 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
         {...props}
         style={[
           s.input,
-          props.multiline && { minHeight: 104, textAlignVertical: "top" },
+          props.multiline && {
+            minHeight: Math.ceil(104 * fontScale),
+            textAlignVertical: "top",
+          },
           props.style,
         ]}
       />

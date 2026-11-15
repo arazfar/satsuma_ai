@@ -145,6 +145,7 @@ export default function SatsumaScreen() {
               }}
             />
             <Text
+              allowFontScaling={false}
               style={{
                 color: colors.ink,
                 fontWeight: "700",
@@ -163,12 +164,18 @@ export default function SatsumaScreen() {
             style={{
               minHeight: 44,
               minWidth: 44,
+              flexShrink: 1,
               padding: 10,
               justifyContent: "center",
             }}
           >
             <Text
-              style={{ color: colors.ink, fontSize: 14, fontWeight: "600" }}
+              style={{
+                color: colors.ink,
+                fontSize: 14,
+                fontWeight: "600",
+                flexShrink: 1,
+              }}
             >
               Your circle
               {friends?.some(
