@@ -1,37 +1,15 @@
 project:
-    id: 2dbf3930-3fc6-4463-8ec7-140d0ae880be
+  id: 2dbf3930-3fc6-4463-8ec7-140d0ae880be
 session:
-    idle_timeout_seconds: 1800
+  idle_timeout_seconds: 1800
 build:
-    framework: expo
-    profiles:
-        development:
-            ios:
-                setup_commands:
-                    - npm install
-                    - if [ ! -d ios ]; then npx expo prebuild --platform ios --no-install; fi
-                build_commands:
-                    - cd ios && if [ ! -d Pods ]; then pod install; fi && WS=$(ls -d *.xcworkspace | head -n 1) && xcodebuild -workspace "$WS" -scheme "${WS%.xcworkspace}" -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath build
-                output_path: ios/build/Build/Products/Debug-iphonesimulator/*.app
-            android:
-                setup_commands:
-                    - npm install
-                    - if [ ! -d android ]; then npx expo prebuild --platform android --no-install; fi
-                build_commands:
-                    - cd android && ./gradlew assembleDebug -PreactNativeArchitectures=x86_64
-                output_path: android/app/build/outputs/apk/debug/app-debug.apk
-        preview:
-            ios:
-                setup_commands:
-                    - npm install
-                    - if [ ! -d ios ]; then npx expo prebuild --platform ios --no-install; fi
-                build_commands:
-                    - cd ios && if [ ! -d Pods ]; then pod install; fi && WS=$(ls -d *.xcworkspace | head -n 1) && xcodebuild -workspace "$WS" -scheme "${WS%.xcworkspace}" -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath build
-                output_path: ios/build/Build/Products/Release-iphonesimulator/*.app
-            android:
-                setup_commands:
-                    - npm install
-                    - if [ ! -d android ]; then npx expo prebuild --platform android --no-install; fi
-                build_commands:
-                    - cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
-                output_path: android/app/build/outputs/apk/release/app-release.apk
+  framework: expo
+  env:
+    EXPO_PUBLIC_CONVEX_URL: https://content-salmon-941.convex.cloud
+  profiles:
+    preview:
+      ios:
+        app_id: c37a6998-ff50-4304-8081-89e2f1754d13
+        build_commands:
+          - bash scripts/build-ios-simulator.sh
+        output_path: ios/build/Build/Products/Release-iphonesimulator/SatsumaAI.app

@@ -8,8 +8,15 @@ test:
   build:
     name: satsuma-ai
   blocks:
+    - type: if
+      condition: Is Try a sample circle visible?
+      then:
+        - type: instructions
+          step_description: Tap Try a sample circle to enter the explicitly fictional circle.
     - type: instructions
-      step_description: Enter Try a sample circle if necessary, then tap Reset sample circle to start a FRESH isolated fictional circle for this run. Confirm the reset if prompted. Never reuse a prior sample circle containing viewer topics.
+      step_description: Tap Reset sample circle to start a FRESH isolated fictional circle for this run. Never reuse a prior sample circle containing viewer topics.
+    - type: instructions
+      step_description: In the confirmation alert, tap Reset sample circle.
     - type: validation
       step_description: This is a fictional sample circle. Maya has Saturday ceramics, and the viewer has no pottery topic or pottery overlap yet.
     - type: instructions
