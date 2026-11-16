@@ -1,6 +1,9 @@
 import { ReactNode } from "react";
+import mayaPortrait from "../assets/portraits/maya.jpg";
+import leoPortrait from "../assets/portraits/leo.jpg";
 import {
   Image,
+  ImageSourcePropType,
   Pressable,
   StyleSheet,
   Text,
@@ -151,6 +154,11 @@ export function Portrait({
   onPress?: () => void;
   fictional?: boolean;
 }) {
+  let source: ImageSourcePropType | undefined = uri ? { uri } : undefined;
+  if (!source && fictional) {
+    if (name === "Maya") source = mayaPortrait;
+    if (name === "Leo") source = leoPortrait;
+  }
   const image = (
     <View
       style={[
@@ -158,9 +166,11 @@ export function Portrait({
         { width: size, height: size, borderRadius: size * 0.42 },
       ]}
     >
-      {uri ? (
+      {source ? (
         <Image
-          source={{ uri }}
+          source={source}
+          resizeMode="cover"
+          accessibilityLabel={`${name}${fictional ? ", fictional sample friend" : "'s profile photo"}`}
           accessibilityIgnoresInvertColors
           style={{ width: "100%", height: "100%" }}
         />

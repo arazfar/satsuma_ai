@@ -223,6 +223,7 @@ export function FriendProfile({
         <Portrait
           name={data.profile.name}
           uri={data.profile.photoUrl}
+          fictional={data.profile.synthetic}
           size={112}
         />
         <Heading>{data.profile.name}</Heading>
