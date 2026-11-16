@@ -1,0 +1,48 @@
+# Revyl Test Definition
+
+_meta:
+    remote_id: 2f598a04-a703-440e-b4f9-ea1234f85e44
+    remote_version: 1
+    local_version: 1
+    last_synced_at: "2026-11-16T00:02:33Z"
+    checksum: 3e7c16f09054550f8922fdbd2a71a900c1abb2e7abddab1be9daa880fd706021
+test:
+    metadata:
+        name: native-file-import
+        platform: ios
+        tags:
+            - regression
+            - privacy
+            - files
+    build:
+        name: capy--org_01M7G3Z5DPHEYN36H5EJ5BS608--satsuma-ai-ios
+    blocks:
+        - type: manual
+          step_type: download_file
+          step_description: https://raw.githubusercontent.com/arazfar/satsuma_ai/8da1deb/.revyl/fixtures/native-recap.json
+        - type: if
+          condition: Is Try a sample circle visible?
+          then:
+            - type: instructions
+              step_description: Tap Try a sample circle to enter the explicitly fictional circle.
+        - type: instructions
+          step_description: Tap Fictional sample circle Manage, then Reset sample circle, then confirm Reset sample circle in the alert. Start a fresh isolated sample; never change real-circle topics.
+        - type: instructions
+          step_description: Open You, Import a recap, then Choose a file. Do not paste or type source text.
+        - type: instructions
+          step_description: In the native Files picker, choose Browse, On My iPhone, Fitness, then native-recap.json. Select the downloaded synthetic JSON file; do not enter its source text manually.
+        - type: validation
+          step_description: The native selected-file decoder opened the review for Pocket sketchbook, with sentence I want to sketch one little thing on my walk. and drawing tag. Its unknown date still needs explicit week confirmation, and sharing is unchecked.
+        - type: instructions
+          step_description: Confirm the displayed week for Pocket sketchbook. Leave sharing unchecked and tap Save kept topics privately.
+        - type: validation
+          step_description: You lists Pocket sketchbook exactly once, with its specific sentence and Only you audience.
+        - type: manual
+          step_type: kill_app
+        - type: manual
+          step_type: open_app
+          step_description: ai.satsuma.circle
+        - type: instructions
+          step_description: Open You.
+        - type: validation
+          step_description: Pocket sketchbook remains saved exactly once, with Only you audience, after a true cold relaunch of the same standalone build.
