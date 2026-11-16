@@ -56,6 +56,7 @@ export default function SatsumaScreen() {
   const [sheetBusy, setSheetBusy] = useState(false);
   const [error, setError] = useState("");
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  const sheetScroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
   function selectTab(next: "friends" | "you") {
     setTab(next);
@@ -63,7 +64,7 @@ export default function SatsumaScreen() {
   }
 
   function close() {
-    if (!sheetBusy) setSheet(null);
+    if (!sheetBusy && !busy) setSheet(null);
   }
   function saved() {
     setSheet(null);
@@ -101,7 +102,7 @@ export default function SatsumaScreen() {
   function resetSample() {
     Alert.alert(
       "Start a fresh fictional circle?",
-      "This clears only your sample topics. Maya starts with Saturday ceramics, and you start with no pottery topic. Your real circle is untouched.",
+      "This clears your sample topics and starts a fresh fictional circle. Your real circle stays untouched.",
       [
         { text: "Keep this circle", style: "cancel" },
         {
@@ -144,6 +145,7 @@ export default function SatsumaScreen() {
               }}
             />
             <Text
+              allowFontScaling={false}
               style={{
                 color: colors.ink,
                 fontWeight: "700",
@@ -162,12 +164,18 @@ export default function SatsumaScreen() {
             style={{
               minHeight: 44,
               minWidth: 44,
+              flexShrink: 1,
               padding: 10,
               justifyContent: "center",
             }}
           >
             <Text
-              style={{ color: colors.ink, fontSize: 14, fontWeight: "600" }}
+              style={{
+                color: colors.ink,
+                fontSize: 14,
+                fontWeight: "600",
+                flexShrink: 1,
+              }}
             >
               Your circle
               {friends?.some(
@@ -181,13 +189,8 @@ export default function SatsumaScreen() {
           </Pressable>
         </View>
         <View style={{ gap: 6 }}>
-          <Label>
-            {tab === "friends"
-              ? "Good company, little connections"
-              : "A little collection of you"}
-          </Label>
           <Heading>
-            {tab === "friends" ? "Same wavelength." : "You, lately."}
+            {tab === "friends" ? "Friends, lately." : "Your week."}
           </Heading>
           <View
             style={{
@@ -200,78 +203,29 @@ export default function SatsumaScreen() {
             <Text style={[s.body, { color: colors.muted, flexShrink: 1 }]}>
               {window.label}
             </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Refresh the past seven local calendar days"
-              onPress={refresh}
-              testID="refresh-week"
-              style={{ minHeight: 44, padding: 10, justifyContent: "center" }}
-            >
-              <Text
-                style={{ color: colors.ink, fontSize: 14, fontWeight: "600" }}
-              >
-                Refresh ↻
-              </Text>
-            </Pressable>
           </View>
         </View>
         {me?.sampleActive ? (
-          <Paper color={colors.mint} style={{ padding: 14, gap: 5 }}>
-            <Label>Fictional sample circle</Label>
-            <View style={s.row}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Reset sample circle"
-                disabled={busy}
-                onPress={resetSample}
-                testID="reset-sample-circle"
-                style={{
-                  minHeight: 44,
-                  justifyContent: "center",
-                  paddingRight: 12,
-                }}
-              >
-                <Text
-                  style={{ color: colors.ink, fontSize: 14, fontWeight: "600" }}
-                >
-                  Reset sample circle ↻
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Leave sample circle and return to my real circle"
-                disabled={busy}
-                onPress={() => {
-                  setBusy(true);
-                  void stopSample({})
-                    .catch(() =>
-                      setError(
-                        "Couldn’t return to your real circle. Try again.",
-                      ),
-                    )
-                    .finally(() => setBusy(false));
-                }}
-                testID="leave-sample-circle"
-                style={{
-                  minHeight: 44,
-                  justifyContent: "center",
-                  paddingHorizontal: 8,
-                }}
-              >
-                <Text style={{ color: colors.ink, fontSize: 14 }}>
-                  Leave sample ↗
-                </Text>
-              </Pressable>
-            </View>
-          </Paper>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Fictional sample circle. Manage sample"
+            onPress={() => setSheet({ kind: "circle" })}
+            style={{
+              minHeight: 44,
+              justifyContent: "center",
+              backgroundColor: colors.mint,
+              borderRadius: 16,
+              padding: 14,
+            }}
+          >
+            <Text style={[s.body, { fontWeight: "600" }]}>
+              Fictional sample circle · Manage ↗
+            </Text>
+          </Pressable>
         ) : null}
         {me?.sharingPaused ? (
-          <Paper color={colors.lilac}>
-            <Label>Sharing is paused</Label>
-            <Body>
-              Your shared topics and matches are hidden until you resume in Edit
-              profile.
-            </Body>
+          <Paper color={colors.lilac} style={{ padding: 16 }}>
+            <Body>Sharing paused · Your topics are hidden from friends.</Body>
             <Action secondary onPress={() => setSheet({ kind: "profile" })}>
               Manage sharing
             </Action>
@@ -281,72 +235,32 @@ export default function SatsumaScreen() {
         {tab === "friends" ? (
           <>
             {me === undefined || feed === undefined || matches === undefined ? (
-              <Body>Finding your circle’s little connections…</Body>
+              <Body>Opening your circle…</Body>
             ) : strongest ? (
               <View style={{ gap: 16 }}>
-                <Label>Your strongest connection this week</Label>
                 <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    justifyContent: "center",
+                    gap: 12,
                   }}
                 >
-                  <View
-                    style={{
-                      flex: 1,
-                      borderTopLeftRadius: 70,
-                      borderTopRightRadius: 34,
-                      borderBottomLeftRadius: 30,
-                      backgroundColor: colors.apricot,
-                      padding: 22,
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <Portrait
-                      name={me.name}
-                      uri={me.photoUrl}
-                      size={72}
-                      onPress={() => selectTab("you")}
-                    />
-                    <Text
-                      style={[
-                        s.body,
-                        { fontWeight: "600", textAlign: "center" },
-                      ]}
-                    >
-                      {me.name} · You
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      flex: 1,
-                      borderTopRightRadius: 70,
-                      borderBottomRightRadius: 30,
-                      borderTopLeftRadius: 34,
-                      backgroundColor: colors.lilac,
-                      padding: 22,
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <Portrait
-                      name={strongest.friend.name}
-                      uri={strongest.friend.photoUrl}
-                      size={72}
-                      onPress={() => openFriend(strongest.friend)}
-                      fictional={strongest.friend.synthetic}
-                    />
-                    <Text
-                      style={[
-                        s.body,
-                        { fontWeight: "600", textAlign: "center" },
-                      ]}
-                    >
-                      {strongest.friend.name}
-                    </Text>
-                  </View>
+                  <Portrait
+                    name={me.name}
+                    uri={me.photoUrl}
+                    size={52}
+                    onPress={() => selectTab("you")}
+                  />
+                  <Text style={[s.body, { fontWeight: "600", flex: 1 }]}>
+                    You + {strongest.friend.name}
+                  </Text>
+                  <Portrait
+                    name={strongest.friend.name}
+                    uri={strongest.friend.photoUrl}
+                    size={52}
+                    onPress={() => openFriend(strongest.friend)}
+                    fictional={strongest.friend.synthetic}
+                  />
                 </View>
                 <ActionTile
                   onPress={() => openMatch(strongest)}
@@ -354,32 +268,19 @@ export default function SatsumaScreen() {
                   testID="strongest-overlap"
                 >
                   <Paper
-                    color={colors.paper}
+                    color={colors.apricot}
+                    ticket
                     style={{
-                      marginTop: -34,
-                      marginHorizontal: 12,
-                      borderRadius: 28,
+                      borderTopLeftRadius: 52,
+                      borderBottomRightRadius: 40,
                     }}
                   >
-                    <Label>
-                      You and {strongest.friend.name} are both getting into
-                    </Label>
-                    <Text
-                      style={{
-                        fontSize: 39,
-                        lineHeight: 47,
-                        fontWeight: "600",
-                        color: colors.ink,
-                        letterSpacing: -1.5,
-                      }}
-                    >
+                    <Label>Something in common</Label>
+                    <Text style={[s.heading, { fontSize: 36 }]}>
                       {strongest.sharedTags.join(" + ")}
                     </Text>
-                    <Body>
-                      {strongest.friend.name} is exploring “
-                      {strongest.theirs.title}”. You’re into “
-                      {strongest.mine.title}”.
-                    </Body>
+                    <Text style={s.title}>{strongest.theirs.title}</Text>
+                    <Body>{strongest.theirs.summary}</Body>
                     <Text style={[s.body, { fontWeight: "600" }]}>
                       See both stories & say hello ↗
                     </Text>
@@ -388,28 +289,25 @@ export default function SatsumaScreen() {
               </View>
             ) : (
               <Paper color={colors.lilac} ticket>
-                <Label>
-                  {accepted.length
-                    ? "A connection is taking shape"
-                    : "Your people, beyond the group chat"}
-                </Label>
                 <Text style={s.title}>
                   {accepted.length
-                    ? "What might you have in common?"
-                    : "Big friendship. Small beginnings."}
+                    ? "Find your next shared interest."
+                    : "Start with a friend."}
                 </Text>
                 <Body>
                   {accepted.length
-                    ? "Share a little of your week. When your interests meet, you’ll find a reason to reach out right here."
-                    : "See the things friends are making, wondering about, and hoping to try. A little overlap can start a conversation."}
+                    ? "Add something you’re into this week to see where your interests meet."
+                    : "Invite someone to see what they’re getting into."}
                 </Body>
                 <Action
-                  onPress={() => setSheet({ kind: "import" })}
+                  onPress={() =>
+                    setSheet({ kind: accepted.length ? "import" : "circle" })
+                  }
                   testID="friends-import-recap"
                 >
-                  Bring in your week
+                  {accepted.length ? "Bring in your week" : "Invite a friend"}
                 </Action>
-                {!me.sampleActive ? (
+                {!me.sampleActive && !accepted.length ? (
                   <Action
                     secondary
                     disabled={busy}
@@ -418,25 +316,12 @@ export default function SatsumaScreen() {
                   >
                     Try a sample circle · fictional
                   </Action>
-                ) : (
-                  <Body>
-                    Maya is trying Saturday ceramics. Bring in your own week to
-                    discover your connection.
-                  </Body>
-                )}
-                {!accepted.length ? (
-                  <Action
-                    secondary
-                    onPress={() => setSheet({ kind: "circle" })}
-                  >
-                    Invite a real friend
-                  </Action>
                 ) : null}
               </Paper>
             )}
             {matches && matches.length > 1 ? (
               <View style={{ gap: 16 }}>
-                <Label>More places your weeks meet</Label>
+                <Label>More in common</Label>
                 {matches.slice(1).map((match) => (
                   <ActionTile
                     key={`${match.mine._id}:${match.theirs._id}`}
@@ -453,17 +338,10 @@ export default function SatsumaScreen() {
                 ))}
               </View>
             ) : null}
-            <View style={{ gap: 16 }}>
-              <View style={s.row}>
-                <Heading>From your circle</Heading>
-                <Text style={s.body}>↙</Text>
-              </View>
-              <Body muted>
-                What friends chose to share, whether or not it overlaps with
-                you.
-              </Body>
-              {feed?.length ? (
-                feed.map((item, index) => (
+            {feed?.length ? (
+              <View style={{ gap: 16 }}>
+                <Label>From your friends</Label>
+                {feed.map((item, index) => (
                   <Paper
                     key={item.topic._id}
                     color={palette[index % palette.length]}
@@ -504,41 +382,35 @@ export default function SatsumaScreen() {
                       </View>
                     </ActionTile>
                   </Paper>
-                ))
-              ) : feed !== undefined ? (
-                <Paper>
-                  <Body>
-                    A quiet page for now. Invite a friend or share your first
-                    topic to get things going.
-                  </Body>
-                  <Action
-                    secondary
-                    onPress={() => setSheet({ kind: "circle" })}
-                  >
-                    Grow your circle
-                  </Action>
-                </Paper>
-              ) : null}
-            </View>
+                ))}
+              </View>
+            ) : accepted.length && feed !== undefined ? (
+              <Body muted>No topics shared this week yet.</Body>
+            ) : null}
           </>
         ) : (
           <>
             {me ? (
-              <View style={{ alignItems: "center", gap: 14 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 16 }}
+              >
                 <Portrait
                   name={me.name}
                   uri={me.photoUrl}
-                  size={132}
+                  size={76}
                   onPress={() => setSheet({ kind: "profile" })}
                 />
-                <Text style={s.heading}>{me.name}</Text>
-                <Action
-                  secondary
-                  onPress={() => setSheet({ kind: "profile" })}
-                  testID="edit-profile"
-                >
-                  Edit name, photo & sharing
-                </Action>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={s.title}>{me.name}</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => setSheet({ kind: "profile" })}
+                    testID="edit-profile"
+                    style={{ minHeight: 44, justifyContent: "center" }}
+                  >
+                    <Text style={s.body}>Edit profile & sharing ↗</Text>
+                  </Pressable>
+                </View>
               </View>
             ) : (
               <Body>Opening your profile…</Body>
@@ -548,19 +420,18 @@ export default function SatsumaScreen() {
                 onPress={() => setSheet({ kind: "import" })}
                 testID="import-weekly-recap"
               >
-                Import a weekly recap
+                Import a recap
               </Action>
               <Action
                 secondary
                 onPress={() => setSheet({ kind: "manual" })}
                 testID="add-topic"
               >
-                + Add a topic by hand
+                + Add a topic
               </Action>
             </View>
-            <Label>Your little collection</Label>
             {topics === undefined ? (
-              <Body>Loading your topics from your private circle…</Body>
+              <Body>Loading your topics…</Body>
             ) : topics.length ? (
               <View style={{ gap: 16 }} testID="your-topics">
                 {topics.map((topic, index) => (
@@ -581,45 +452,14 @@ export default function SatsumaScreen() {
               </View>
             ) : (
               <Paper color={colors.mint} ticket>
-                <Text style={s.title}>A blank page is a good start.</Text>
                 <Body>
                   Add something you’re making, wondering about, or hoping to
-                  try. Private first. Share when it feels right.
+                  try. It stays private until you share it.
                 </Body>
-                <Action secondary onPress={() => setSheet({ kind: "manual" })}>
-                  Add your first topic
-                </Action>
               </Paper>
             )}
-            {!me?.sampleActive ? (
-              <Paper>
-                <Label>Just looking around?</Label>
-                <Body>
-                  Meet a fictional Maya in a separate sample circle. Your real
-                  friends and topics stay untouched.
-                </Body>
-                <Action
-                  secondary
-                  disabled={busy}
-                  onPress={() => void sample()}
-                  testID="you-try-sample-circle"
-                >
-                  Try a sample circle · fictional
-                </Action>
-              </Paper>
-            ) : null}
           </>
         )}
-        <Text
-          style={{
-            color: colors.muted,
-            fontSize: 12,
-            lineHeight: 19,
-            textAlign: "center",
-          }}
-        >
-          A little more in common. A little more to say.
-        </Text>
       </ScrollView>
       <View
         accessibilityRole="tablist"
@@ -665,17 +505,22 @@ export default function SatsumaScreen() {
         ))}
       </View>
       {sheet ? (
-        <Sheet onClose={close} busy={sheetBusy}>
-          {sheet.kind === "import" ? (
+        <Sheet onClose={close} busy={sheetBusy || busy} scrollRef={sheetScroll}>
+          {sheet.kind === "import" && me ? (
             <WeeklyImport
+              scope={me.scope}
               window={window}
               onSaved={saved}
               onCancel={close}
               onBusy={setSheetBusy}
+              onStep={() =>
+                sheetScroll.current?.scrollTo({ y: 0, animated: false })
+              }
             />
           ) : null}
-          {sheet.kind === "manual" ? (
+          {sheet.kind === "manual" && me ? (
             <TopicEditor
+              scope={me.scope}
               topic={sheet.topic}
               window={window}
               onSaved={saved}
@@ -690,7 +535,51 @@ export default function SatsumaScreen() {
             />
           ) : null}
           {sheet.kind === "circle" ? (
-            <Circle onProfile={(friend) => openFriend(friend.profile)} />
+            <>
+              {me?.sampleActive ? (
+                <Paper color={colors.mint}>
+                  <Label>Fictional sample circle</Label>
+                  <Body>Your real friends and topics stay separate.</Body>
+                  <Action
+                    secondary
+                    disabled={busy}
+                    onPress={resetSample}
+                    testID="reset-sample-circle"
+                  >
+                    Reset sample circle
+                  </Action>
+                  <Action
+                    secondary
+                    disabled={busy}
+                    onPress={() => {
+                      setBusy(true);
+                      void stopSample({})
+                        .then(() => setSheet(null))
+                        .catch(() =>
+                          setError(
+                            "Couldn’t return to your real circle. Try again.",
+                          ),
+                        )
+                        .finally(() => setBusy(false));
+                    }}
+                    testID="leave-sample-circle"
+                  >
+                    Leave sample
+                  </Action>
+                </Paper>
+              ) : null}
+              <Circle onProfile={(friend) => openFriend(friend.profile)} />
+              {!me?.sampleActive ? (
+                <Action
+                  secondary
+                  disabled={busy}
+                  onPress={() => void sample()}
+                  testID="circle-try-sample"
+                >
+                  Try a sample circle · fictional
+                </Action>
+              ) : null}
+            </>
           ) : null}
           {sheet.kind === "friend" ? (
             <FriendProfile

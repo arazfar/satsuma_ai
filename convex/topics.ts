@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import schema, { topicFields } from "./schema";
-import { canReadTopic, insertTopic, requireUser, retryKey, scopeFor, topicsFor, validateTopic } from "./model";
+import { canReadTopic, insertTopic, requireUser, requireWriteScope, retryKey, scopeFor, topicsFor, validateTopic } from "./model";
 
 export const listMine = query({
   args: {}, returns: v.array(schema.doc("topics")),
@@ -14,11 +14,27 @@ export const listMine = query({
 const {owner: _owner, updatedAt: _updatedAt, sampleOwner: _sampleOwner, ...addFields} = topicFields;
 
 export const add = mutation({
-  args: addFields, returns: v.id("topics"),
+  args: {...addFields, scope: v.union(v.string(), v.null())}, returns: v.id("topics"),
+  handler: async (ctx, {scope: expectedScope, ...args}) => {
+    const owner = await requireUser(ctx);
+    const scope = await requireWriteScope(ctx, owner, expectedScope);
+    return (await insertTopic(ctx, owner, {...args, ...(scope ? {sampleOwner: scope} : {})})).id;
+  },
+});
+
+export const saveImport = mutation({
+  args: {scope: v.union(v.string(), v.null()), topics: v.array(v.object(addFields))},
+  returns: v.object({created: v.number(), unchanged: v.number(), deleted: v.number()}),
   handler: async (ctx, args) => {
     const owner = await requireUser(ctx);
-    const scope = await scopeFor(ctx, owner);
-    return await insertTopic(ctx, owner, {...args, ...(scope ? {sampleOwner: scope} : {})});
+    const scope = await requireWriteScope(ctx, owner, args.scope);
+    if (!args.topics.length || args.topics.length > 5) throw new Error("Save one to five reviewed topics at a time.");
+    const counts = {created: 0, unchanged: 0, deleted: 0};
+    for (const topic of args.topics) {
+      const result = await insertTopic(ctx, owner, {...topic, ...(scope ? {sampleOwner: scope} : {})});
+      counts[result.status]++;
+    }
+    return counts;
   },
 });
 

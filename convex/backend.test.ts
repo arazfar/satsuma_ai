@@ -7,7 +7,7 @@ import { normalizeTag } from "./model";
 
 const modules = import.meta.glob("./**/*.ts");
 const week = {weekStart: "2026-11-09", weekEnd: "2026-11-15"};
-const topic = {title: "Wheel-thrown mugs", summary: "I want to make my own coffee mug on the wheel.", tags: ["wheel throwing"], source: "manual" as const, date: null, ...week, audience: "friends" as const, importKey: "mug-1"};
+const topic = {scope: null as string | null,title: "Wheel-thrown mugs", summary: "I want to make my own coffee mug on the wheel.", tags: ["wheel throwing"], source: "manual" as const, date: null, ...week, audience: "friends" as const, importKey: "mug-1"};
 
 async function setup() {
   const t = convexTest(schema, modules);
@@ -108,15 +108,15 @@ describe("server privacy", () => {
     await m.mutation(api.topics.update, {id, tags: ["gardening"]});
     expect(await a.query(api.feed.matches, week)).toEqual([]);
     await m.mutation(api.topics.update, {id, tags: ["ceramics"]});
-    await m.mutation(api.profiles.update, {sharingPaused: true});
+    await m.mutation(api.profiles.update, {sharingPaused: true, scope: null});
     expect(await a.query(api.topics.get, {id})).toBeNull();
     expect(await a.query(api.feed.matches, week)).toEqual([]);
     expect(await a.query(api.feed.list, week)).toEqual([]);
     expect((await a.query(api.profiles.get, {userId: maya.userId}))?.topicCount).toBe(0);
-    await m.mutation(api.profiles.update, {sharingPaused: false});
-    await a.mutation(api.profiles.update, {sharingPaused: true});
+    await m.mutation(api.profiles.update, {sharingPaused: false, scope: null});
+    await a.mutation(api.profiles.update, {sharingPaused: true, scope: null});
     expect(await a.query(api.feed.matches, week)).toEqual([]);
-    await a.mutation(api.profiles.update, {sharingPaused: false});
+    await a.mutation(api.profiles.update, {sharingPaused: false, scope: null});
     expect(await a.query(api.feed.matches, week)).toHaveLength(1);
     await expect(s.mutation(api.friendships.remove, {id: edge})).rejects.toThrow("not found");
     await a.mutation(api.friendships.remove, {id: edge});
@@ -210,17 +210,79 @@ describe("matching and save contract", () => {
 });
 
 describe("fictional circle isolation and photos", () => {
+  it("rejects stale sample saves after leaving or resetting, without publishing them to real friends", async () => {
+    const {a, m, connect} = await setup();
+    await connect();
+    await a.mutation(api.sample.start, week);
+    const payload = {...topic, scope: (await a.query(api.profiles.mine, {})).scope};
+    await a.mutation(api.topics.add, payload);
+    await a.mutation(api.sample.stop, {});
+    await expect(a.mutation(api.topics.add, payload)).rejects.toThrow("circle changed");
+    const {scope, ...fields} = payload;
+    await expect(a.mutation(api.topics.saveImport, {scope, topics: [fields]})).rejects.toThrow("circle changed");
+    expect(await m.query(api.feed.list, week)).toEqual([]);
+    expect(await a.query(api.topics.listMine, {})).toEqual([]);
+    await a.mutation(api.sample.start, {...week, reset: true});
+    await expect(a.mutation(api.topics.add, payload)).rejects.toThrow("circle changed");
+    await expect(a.mutation(api.topics.add, {...payload, scope: "another-account-run"})).rejects.toThrow("circle changed");
+  });
+
+  it("refuses a stale real pause rather than silently changing sample privacy", async () => {
+    const {a, m, connect} = await setup();
+    await connect();
+    const id = await a.mutation(api.topics.add, topic);
+    await a.mutation(api.sample.start, week);
+    await expect(a.mutation(api.profiles.update, {sharingPaused: true, scope: null})).rejects.toThrow("circle changed");
+    expect((await a.query(api.profiles.mine, {})).sharingPaused).toBe(false);
+    await a.mutation(api.sample.stop, {});
+    await a.mutation(api.profiles.update, {sharingPaused: true, scope: null});
+    expect(await m.query(api.topics.get, {id})).toBeNull();
+  });
+
+  it("refreshes only generated sample fixtures on a later-week re-entry", async () => {
+    const {a} = await setup();
+    await a.mutation(api.sample.start, week);
+    const scope = (await a.query(api.profiles.mine, {})).scope;
+    const id = await a.mutation(api.topics.add, {...topic, scope});
+    await a.mutation(api.sample.stop, {});
+    const later = {weekStart: "2026-11-16", weekEnd: "2026-11-22"};
+    await a.mutation(api.sample.start, later);
+    expect(await a.query(api.feed.list, later)).toHaveLength(2);
+    expect(await a.query(api.feed.matches, later)).toHaveLength(1);
+    const authored = await a.query(api.topics.get, {id});
+    expect(authored?.weekStart).toBe(week.weekStart);
+    expect(authored?.weekEnd).toBe(week.weekEnd);
+    expect((await a.query(api.profiles.mine, {})).scope).toBe(scope);
+  });
+
+  it("saves imports atomically at the topic limit and reports existing/deleted topics without overwriting them", async () => {
+    const {a} = await setup();
+    for (let i = 0; i < 99; i++) await a.mutation(api.topics.add, {...topic, importKey: `filler-${i}`});
+    const {scope, ...first} = {...topic, importKey: "batch-first"};
+    const second = {...first, importKey: "batch-second"};
+    await expect(a.mutation(api.topics.saveImport, {scope, topics: [first, second]})).rejects.toThrow("100 topics");
+    expect(await a.query(api.topics.listMine, {})).toHaveLength(99);
+    expect(await a.mutation(api.topics.saveImport, {scope, topics: [first]})).toEqual({created: 1, unchanged: 0, deleted: 0});
+    const saved = (await a.query(api.topics.listMine, {})).find(t => t.importKey === first.importKey)!;
+    await a.mutation(api.topics.update, {id: saved._id, title: "My later edit"});
+    expect(await a.mutation(api.topics.saveImport, {scope, topics: [{...first, audience: "private"}]})).toEqual({created: 0, unchanged: 1, deleted: 0});
+    expect((await a.query(api.topics.get, {id: saved._id}))?.audience).toBe("friends");
+    expect((await a.query(api.topics.get, {id: saved._id}))?.title).toBe("My later edit");
+    await a.mutation(api.topics.remove, {id: saved._id});
+    expect(await a.mutation(api.topics.saveImport, {scope, topics: [first]})).toEqual({created: 0, unchanged: 0, deleted: 1});
+    expect(await a.query(api.topics.get, {id: saved._id})).toBeNull();
+  });
   it("keeps real sharing paused through sample entry/reset/exit and scopes sample pause separately", async () => {
     const {a, m, connect} = await setup();
     await connect();
     const id = await a.mutation(api.topics.add, topic);
-    await a.mutation(api.profiles.update, {sharingPaused: true});
+    await a.mutation(api.profiles.update, {sharingPaused: true, scope: null});
     await a.mutation(api.sample.start, {...week, reset: true});
     expect((await a.query(api.profiles.mine, {})).sharingPaused).toBe(false);
     expect(await a.query(api.feed.matches, week)).toHaveLength(1);
     expect(await m.query(api.topics.get, {id})).toBeNull();
     expect(await m.query(api.feed.list, week)).toEqual([]);
-    await a.mutation(api.profiles.update, {sharingPaused: true});
+    await a.mutation(api.profiles.update, {sharingPaused: true, scope: (await a.query(api.profiles.mine, {})).scope});
     expect(await a.query(api.feed.matches, week)).toEqual([]);
     await a.mutation(api.sample.start, {...week, reset: true});
     expect((await a.query(api.profiles.mine, {})).sharingPaused).toBe(false);
@@ -246,14 +308,14 @@ describe("fictional circle isolation and photos", () => {
     expect(await s.query(api.profiles.get, {userId: mayaId})).toBeNull();
     await m.mutation(api.sample.start, week);
     expect(await m.query(api.topics.get, {id: mayaTopic._id})).toBeNull();
-    const sampleId = await a.mutation(api.topics.add, topic);
+    const sampleId = await a.mutation(api.topics.add, {...topic, scope: (await a.query(api.profiles.mine, {})).scope});
     expect(sampleId).not.toBe(realId);
     expect((await a.query(api.feed.matches, week)).some(x => x.theirs.title === "Saturday ceramics" && x.mine.title === "Wheel-thrown mugs")).toBe(true);
     await a.mutation(api.sample.start, {...week, reset: true});
     expect((await a.query(api.topics.listMine, {})).some(x => x.tags.map(normalizeTag).includes("pottery"))).toBe(false);
-    const retriedFresh = await a.mutation(api.topics.add, topic);
+    const retriedFresh = await a.mutation(api.topics.add, {...topic, scope: (await a.query(api.profiles.mine, {})).scope});
     expect(retriedFresh).not.toBe(sampleId);
-    expect(await a.mutation(api.topics.add, topic)).toBe(retriedFresh);
+    expect(await a.mutation(api.topics.add, {...topic, scope: (await a.query(api.profiles.mine, {})).scope})).toBe(retriedFresh);
     await a.mutation(api.sample.stop, {});
     expect((await a.query(api.topics.listMine, {})).map(x => x._id)).toEqual([realId]);
     expect(await a.query(api.topics.get, {id: retriedFresh})).toBeNull();

@@ -1,0 +1,65 @@
+# Revyl Test Definition
+
+_meta:
+    remote_id: e72559ce-3771-4918-88b2-46ec2b2ddea0
+    remote_version: 1
+    local_version: 1
+    last_synced_at: "2026-11-15T23:31:10Z"
+    checksum: b856f7f75e33892190565c573d0a61c1882d965c630f049ddbbc2adcf704bb02
+test:
+    metadata:
+        name: import-privacy-regression
+        platform: ios
+        tags:
+            - regression
+            - privacy
+            - import
+    build:
+        name: capy--org_01M7G3Z5DPHEYN36H5EJ5BS608--satsuma-ai-ios
+    blocks:
+        - type: if
+          condition: Is Try a sample circle visible?
+          then:
+            - type: instructions
+              step_description: Tap Try a sample circle to enter the explicitly fictional circle.
+        - type: instructions
+          step_description: Tap Fictional sample circle Manage, then Reset sample circle, then confirm Reset sample circle in the alert. This must start a fresh isolated sample and never change real-circle data.
+        - type: instructions
+          step_description: Open You, then Import a recap.
+        - type: validation
+          step_description: The import input and review action are easy to reach without scrolling past a full assistant prompt. The recap prompt is collapsed behind Need a recap, and a privacy sentence states nothing is shared automatically.
+        - type: instructions
+          step_description: 'Type exactly into Your recap: {"topics":[{"title":"Evening sketchbook","summary":"I want to draw one small thing every evening.","tags":["drawing"],"date":null}]}'
+        - type: instructions
+          step_description: Tap Review privately. Confirm the displayed week, explicitly select Evening sketchbook to share, then tap Share 1 with friends.
+        - type: validation
+          step_description: You shows Evening sketchbook exactly once with its specific sentence and Shared with friends audience.
+        - type: instructions
+          step_description: Open Import a recap again. Type exactly the same Evening sketchbook JSON into Your recap and tap Review privately.
+        - type: validation
+          step_description: Nothing is preselected to share on the repeated import; its unknown date still needs explicit week confirmation.
+        - type: instructions
+          step_description: Confirm the displayed week, leave sharing unchecked, and tap Save kept topics privately.
+        - type: validation
+          step_description: The app explicitly says the topic was already saved and its existing text and sharing were not changed. It does NOT claim the already-shared topic became private.
+        - type: instructions
+          step_description: Tap View your topics, open Evening sketchbook, and choose Edit, unshare or delete. Tap Unshare now.
+        - type: validation
+          step_description: You shows Evening sketchbook exactly once with Only you audience after the explicit unshare.
+        - type: instructions
+          step_description: Open Import a recap, type the same Evening sketchbook JSON again, tap Review privately, confirm its week, select it to share, and tap Share 1 with friends.
+        - type: validation
+          step_description: The app explains this existing topic was not changed by reimport.
+        - type: instructions
+          step_description: Tap View your topics.
+        - type: validation
+          step_description: Evening sketchbook remains Only you and appears once. Reimport did not reverse the later unshare or duplicate the topic.
+        - type: manual
+          step_type: kill_app
+        - type: manual
+          step_type: open_app
+          step_description: ai.satsuma.circle
+        - type: instructions
+          step_description: Open You.
+        - type: validation
+          step_description: Evening sketchbook is still saved exactly once, with its specific sentence and Only you audience after a true cold relaunch of the standalone app.

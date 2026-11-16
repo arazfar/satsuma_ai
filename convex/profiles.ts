@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { action, internalMutation, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import schema from "./schema";
-import { acceptedFriend, ensureProfile, profileValidator, profileView, requireUser, scopeFor, topicsFor } from "./model";
+import { acceptedFriend, ensureProfile, profileValidator, profileView, requireUser, requireWriteScope, scopeFor, topicsFor } from "./model";
 
 export const mine = query({
   args: {}, returns: profileValidator,
@@ -26,12 +26,12 @@ export const get = query({
 });
 
 export const update = mutation({
-  args: {name: v.optional(v.string()), sharingPaused: v.optional(v.boolean()), photoId: v.optional(v.null())}, returns: v.null(),
+  args: {name: v.optional(v.string()), sharingPaused: v.optional(v.boolean()), photoId: v.optional(v.null()), scope: v.optional(v.union(v.string(), v.null()))}, returns: v.null(),
   handler: async (ctx, args) => {
     const owner = await requireUser(ctx);
     if (args.name !== undefined && (!args.name.trim() || args.name.length > 60 || /[\u0000-\u001f]/.test(args.name))) throw new Error("Choose a name up to 60 characters.");
     const profile = await ensureProfile(ctx, owner);
-    const scope = await scopeFor(ctx, owner);
+    const scope = args.sharingPaused !== undefined ? await requireWriteScope(ctx, owner, args.scope) : await scopeFor(ctx, owner);
     if (args.photoId === null && profile.photoId) await ctx.storage.delete(profile.photoId);
     await ctx.db.patch("profiles", profile._id, {
       ...(args.name !== undefined ? {name: args.name.trim()} : {}),

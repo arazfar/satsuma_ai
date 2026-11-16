@@ -63,11 +63,9 @@ export function Circle({
   }
   return (
     <View style={{ gap: 22 }}>
-      <Label>Small circle, good company</Label>
-      <Heading>Make room for a friend.</Heading>
+      <Heading>Your circle.</Heading>
       <Body>
-        Trade a code, send a request, then wait for the other person to accept.
-        Sharing only starts when you both agree.
+        Trade invite codes. Sharing starts only after the request is accepted.
       </Body>
       <Action
         onPress={() =>
@@ -141,7 +139,7 @@ export function Circle({
       </Action>
       <ErrorNote text={error} />
       {notice ? <Body>{notice}</Body> : null}
-      <Heading>Your circle</Heading>
+      <Label>Friends & requests</Label>
       {friends === undefined ? (
         <Body>Loading your circle…</Body>
       ) : !friends.length ? (
@@ -155,9 +153,11 @@ export function Circle({
               <Portrait
                 name={friend.profile.name}
                 uri={friend.profile.photoUrl}
-                onPress={() => {
-                  if (friend.status === "accepted") onProfile(friend);
-                }}
+                onPress={
+                  friend.status === "accepted"
+                    ? () => onProfile(friend)
+                    : undefined
+                }
                 fictional={friend.profile.synthetic}
               />
               <View style={{ flex: 1, minWidth: 130 }}>
